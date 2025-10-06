@@ -1,0 +1,87 @@
+from flask import Blueprint, jsonify, request
+import random
+
+# Definir el blueprint
+partida_bp = Blueprint("partida", __name__)
+
+# Lógica de tirada
+def tiradad10(base=0, dificultad=0):
+    dado = random.randint(1, 11)
+    total = base + dado
+    return {
+        "dado": dado,
+        "base": base,
+        "total": total,
+        "dificultad": dificultad,
+        "exito": total >= dificultad,
+        "fracaso": total<= dificultad,
+    }
+    
+def tiradaConRefuerzo(base=0, dificultad=0):
+    # Simula la tirada de los dos dados de 10 caras (rango 1 a 10)
+    dado1 = random.randint(1, 10)
+    dado2 = random.randint(1, 10)
+    suma_dados = dado1 + dado2
+    total = base + suma_dados
+    exito = total >= dificultad
+    fracaso = total < dificultad 
+    
+    return {
+        "dado_individuales": (dado1, dado2),
+        "dado": suma_dados,  # La suma de los dos dados
+        "base": base,
+        "total": total,
+        "dificultad": dificultad,
+        "exito": exito,
+        "fracaso": fracaso,
+    }
+    
+import random
+
+def tiradaConSuerte(base=0, dificultad=0):    
+    # 1. Simula la tirada de los dos dados de 10 caras (rango 1 a 10)
+    dado1 = random.randint(1, 10)
+    dado2 = random.randint(1, 10)
+    
+    # 2. Selecciona el dado con el valor MÁS ALTO para usar en el cálculo
+    dado_elegido = max(dado1, dado2)
+    
+    # 3. Calcula el total: Solo se suma el dado más alto a la base.
+    total = base + dado_elegido
+    
+    # Determina el éxito y el fracaso
+    exito = total >= dificultad
+    fracaso = total < dificultad 
+    
+    # 4. Retorna los resultados
+    return {
+        "dado_individuales": (dado1, dado2),
+        "dado": dado_elegido,  # Contiene el valor del dado más alto (el que se usó)
+        "base": base,
+        "total": total,
+        "dificultad": dificultad,
+        "exito": exito,
+        "fracaso": fracaso,
+    }
+    
+def tiradapifia(base=0, dificultad=0):
+    dadoP=random.randint(1, 11)
+    total= base-dadoP
+    return{
+        "dadoP": dadoP,
+        "base": base,
+        "dificultad":dificultad,
+        "fracaso": total< dificultad,
+        "fracasoRotundo": total<=0
+    }
+    
+
+
+# Ruta de la tirada
+@partida_bp.route("/d10", methods=["GET"])
+def tirada_d10():
+    base = int(request.args.get("base"))
+    dificultad = int(request.args.get("dificultad"))
+    resultado = tiradad10(base, dificultad)
+    return jsonify(resultado)
+
