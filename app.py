@@ -23,13 +23,17 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = 3600
 app.config["JWT_TOKEN_LOCATION"] = ["headers"]
 jwt = JWTManager(app)
 
-# 📦 Configuración de base SQLite
+# 📦 Ruta de la base SQLite existente (con mayúscula SRC)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "src", "database", "baseApiRolMaster.db")
+DB_PATH = os.path.join(BASE_DIR, "SRC", "Database", "baseApiRolMaster.db")
 
+# ✅ Conexión a la base existente
 def get_db_connection():
+    if not os.path.exists(DB_PATH):
+        print(f"❌ No se encontró la base de datos en: {DB_PATH}")
+        return None
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         conn.row_factory = sqlite3.Row
         print(f"✅ Conectado a SQLite en {DB_PATH}")
         return conn
@@ -40,37 +44,6 @@ def get_db_connection():
 def close_db_connection(conn):
     if conn:
         conn.close()
-
-# 🧱 Inicializar la base si no existe
-def init_db():
-    if not os.path.exists(DB_PATH):
-        print("📦 Creando base de datos SQLite...")
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.executescript("""
-        CREATE TABLE IF NOT EXISTS users (
-            iduser INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            apellido TEXT NOT NULL,
-            username TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS dashboard (
-            idsesion INTEGER PRIMARY KEY AUTOINCREMENT,
-            iduser INTEGER NOT NULL,
-            cronica TEXT,
-            numero_de_sesion INTEGER,
-            fecha TEXT,
-            resumen TEXT,
-            FOREIGN KEY (iduser) REFERENCES users(iduser)
-        );
-        """)
-        conn.commit()
-        conn.close()
-        print("✅ Base creada exitosamente")
-
-init_db()
 
 # 🔗 Registrar blueprints
 app.register_blueprint(login_bp, url_prefix="/")
@@ -151,4 +124,5 @@ def create_dashboard():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
