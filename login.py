@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token
 from datetime import timedelta
 import sqlite3
-from app import get_db_connection, close_db_connection  # ✅ usamos tu conexión centralizada
+from SRC.connect_sqlite import get_db_connection, close_db_connection  # ✅ import correcto
 
 # 🧩 Blueprint
 login_bp = Blueprint("login_bp", __name__)
@@ -29,13 +29,15 @@ def login():
 
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT iduser, username, nombre, apellido, password FROM users WHERE username = ?", (username,))
+        cursor.execute(
+            "SELECT iduser, username, nombre, apellido, password FROM users WHERE username = ?",
+            (username,)
+        )
         row = cursor.fetchone()
 
         if not row:
             return jsonify({"error": "Usuario no encontrado"}), 404
 
-        # Convertimos a diccionario
         user = {
             "iduser": row[0],
             "username": row[1],
@@ -44,18 +46,15 @@ def login():
             "password": row[4]
         }
 
-        # ⚠️ Comparación simple (idealmente usar bcrypt)
         if user["password"] != password:
             return jsonify({"error": "Contraseña incorrecta"}), 401
 
-        # 🧾 Claims opcionales
         claims = {
             "username": user["username"],
             "nombre": user["nombre"],
             "apellido": user["apellido"]
         }
 
-        # 🪙 Generar token JWT
         access_token = create_access_token(
             identity=str(user["iduser"]),
             additional_claims=claims,
@@ -84,4 +83,5 @@ def login():
 
     finally:
         close_db_connection(conn)
+
 

@@ -2,7 +2,9 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 import sqlite3
-import os
+
+# ✅ Importar conexión centralizada
+from SRC.connect_sqlite import get_db_connection, close_db_connection
 
 # Importar Blueprints
 from login import login_bp
@@ -23,32 +25,10 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = 3600
 app.config["JWT_TOKEN_LOCATION"] = ["headers"]
 jwt = JWTManager(app)
 
-# 📦 Ruta de la base SQLite existente (con mayúscula SRC)
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "SRC", "Database", "baseApiRolMaster.db")
-
-# ✅ Conexión a la base existente
-def get_db_connection():
-    if not os.path.exists(DB_PATH):
-        print(f"❌ No se encontró la base de datos en: {DB_PATH}")
-        return None
-    try:
-        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        conn.row_factory = sqlite3.Row
-        print(f"✅ Conectado a SQLite en {DB_PATH}")
-        return conn
-    except sqlite3.Error as e:
-        print(f"❌ Error al conectar SQLite: {e}")
-        return None
-
-def close_db_connection(conn):
-    if conn:
-        conn.close()
-
 # 🔗 Registrar blueprints
 app.register_blueprint(login_bp, url_prefix="/")
 
-# Datos simulados
+# Datos simulados (si los usas)
 usuarios = [usuario]
 dashboards = [sesion]
 
@@ -124,5 +104,3 @@ def create_dashboard():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
-
-
