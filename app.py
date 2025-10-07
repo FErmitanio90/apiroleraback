@@ -31,10 +31,10 @@ def get_db_connection():
     try:
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
-        print(f"✅ Conectado a SQLite: {DB_PATH}")
+        print(f"✅ Conectado a SQLite en {DB_PATH}")
         return conn
-    except sqlite3.Error as err:
-        print(f"❌ Error al conectar a SQLite: {err}")
+    except sqlite3.Error as e:
+        print(f"❌ Error al conectar SQLite: {e}")
         return None
 
 def close_db_connection(conn):
