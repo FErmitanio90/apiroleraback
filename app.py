@@ -102,5 +102,64 @@ def create_dashboard():
     finally:
         close_db_connection(conn)
 
+@app.route("/dashboard/<int:idsesion>", methods=["PUT"])
+@jwt_required()
+def update_dashboard(idsesion):
+    iduser = get_jwt_identity()
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"msg": "Error DB"}), 500
+        
+    try:
+        data = request.get_json()
+        
+        # 1. Validar que se hayan enviado datos
+        if not data:
+            return jsonify({"msg": "No se enviaron datos para actualizar."}), 400
+
+        cursor = conn.cursor()
+        
+        # 2. Construir la consulta SQL dinámicamente
+        # Esto permite actualizar solo los campos que el usuario envió
+        updates = []
+        params = []
+        
+        # Lista de campos permitidos para actualizar
+        allowed_fields = ['cronica', 'numero_de_sesion', 'fecha', 'resumen']
+        
+        for field in allowed_fields:
+            if field in data:
+                updates.append(f"{field} = ?")
+                params.append(data[field])
+
+        if not updates:
+            return jsonify({"msg": "No hay campos válidos para actualizar."}), 400
+
+        # Parámetros finales para la cláusula WHERE: el ID de la sesión y el ID del usuario
+        params.extend([idsesion, iduser])
+        
+        update_query = f"""
+            UPDATE dashboard SET {', '.join(updates)}
+            WHERE idsesion = ? AND iduser = ?
+        """
+        
+        cursor.execute(update_query, tuple(params))
+        
+        # 3. Verificar si se actualizó alguna fila
+        if cursor.rowcount == 0:
+             # Retorna 404 si la sesión no existe o si no pertenece al usuario autenticado
+             return jsonify({"msg": "Sesión no encontrada o no tienes permiso para editarla."}), 404
+             
+        conn.commit()
+        return jsonify({"msg": "Sesión actualizada exitosamente."}), 200
+    
+    except Exception as e:
+        print(f"Error al actualizar sesión: {e}")
+        conn.rollback()
+        return jsonify({"msg": "Error interno del servidor", "error": str(e)}), 500
+        
+    finally:
+        close_db_connection(conn)
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
